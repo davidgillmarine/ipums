@@ -44,7 +44,7 @@ rm(list=setdiff(ls(), c("x","asia","europe","namerica","samerica","africa","clis
 ## Aggregation function
 This function does the following:
 
-* reads in data from the ffdf by country
+* reads in data chunk from the csv
 * aggregates the data for the select variables of interest at the geolevel2 scale. 
 * writes the aggregated data to a new file called **out.table**
 
@@ -190,7 +190,7 @@ proc.time() - ptm
 
 ```
 
-Merge with the shapefiles
+Extract data from a csv
 ```{r eval=FALSE}
 list <- list.files()
 CSVextract('ipumsi_00035.csv')
