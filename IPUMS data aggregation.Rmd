@@ -63,6 +63,7 @@ x <- test
 clist <- unique(x$COUNTRY)       # get a list of all the countries in the dataset
 i <- 1
 ```
+
 ### IPUMSagg function 
 ```{r eval=FALSE}
 IPUMSagg <- function (x) {
