@@ -30,8 +30,8 @@ Reading files as a ffdf allows users to work with large dataframes without stori
 ```{r eval=FALSE}
 #system.time(asia<- read.csv.ffdf(file="ipumsi_asia.csv", header=TRUE, VERBOSE=TRUE, 
 #                  first.rows=1000000, next.rows=1000000, colClasses=NA))
-system.time(x <- fread('ipumsi_00028.csv',nrows=10000000))
-headernames <- names(x)
+#system.time(x <- fread('ipumsi_00028.csv',nrows=10000000))
+#headernames <- names(x)
 #pryr::object_size(asia)
 ```
 
