@@ -131,57 +131,6 @@ emplf <- filter(c1,SEX==2 & EMPSTAT==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(flabfXX= sum(PERWT))
   
-
-#Assets
-
-#Group quarters
-
-#Percetage of households with electricity
-electric <- filter(c1,ELECTRIC==1 & GQ==10) %>%
-  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-  summarize(electric.totnum = sum(PERWT)) %>%
-
-#Percentage of households with piped water
-piped <- filter(c1,WATSUP%in%c(10:18) & GQ==10) %>%
-  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-  summarize( piped.totnum = sum(PERWT)) %>%
-  mutate(ppipedwaterxx = piped.totnum / sum(filter(c1,WATSUP%in%c(10:20) & GQ==10 ))
-
-#Percent of households with a flush toilet
-flushtoilet <- filter(c1,TOILET==21 & GQ==10) %>%
-  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-  summarize( flushtoilet.totnum = sum(PERWT)) %>%
-  mutate(ptoilethh = flushtoilet.totnum / sum(filter(c1,TOILET%in%c(10:23) & GQ==10))
-         
-# Cooking fuel (incomplete)
-cookingfuel <- filter(c1,FUELCOOK & CQ==10) %>%
-  mutate(fuelcook1=ifelse(FUELCOOK==20, "Electricity", 
-                        ifelse(FUELCOOK%in%c(30:47), "Gas",
-                               ifelse(FUELCOOK%in%c(50:56), "Solid Fuels",
-                                      ifelse(FUELCOOK%in%c(60:77), "Other Fuels")))))) %>%
-  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2, EDATTAIN1) %>%
-  summarize(fuelcook.totnum = sum(PERWT)) %>% # cooking fuel total number
-
-         
-#Roofs                                                     INCOMPLETE CODE
-rooftype <- filter(c1,ROOF & GQ==10) %>%
-mutate(rooftype1=ifelse(ROOF==, "Category 1", 
-ifelse(ROOF%in%c(), "Category 2",
-ifelse(ROOF%in%c(), "Category 3",
-ifelse(ROOF%in%c(), "Category 4")))))) %>%
-group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-summarize(roof.totnum = sum(PERWT)) %>% 
-
-#Number of Rooms                                           INCOMPLETE CODE
-room.number <- filter(c1,ROOMS%in%c() & GQ==10) %>% 
-  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-  summarize(rooms.totnum = sum(PERWT)) %>%
-
-#Person per household                                      INCOMPLETE CODE: Variable code is 3-digit numerical variable 
-personsperhh <- filter(c1,PERSONS%in%c() & GQ==10) %>% 
-  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-  summarize(personshh.totnum = sum(PERWT)) %>%
-
 empl <- labor %>%                    
   left_join(civil,by=c("COUNTRY"="COUNTRY","YEAR"="YEAR","GEOLEV1"="GEOLEV1","GEOLEV2"="GEOLEV2")) %>%
   left_join(unempl,by=c("COUNTRY"="COUNTRY","YEAR"="YEAR","GEOLEV1"="GEOLEV1","GEOLEV2"="GEOLEV2")) %>%
