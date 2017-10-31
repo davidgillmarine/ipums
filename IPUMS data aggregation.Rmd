@@ -186,6 +186,7 @@ hotwaterD <- filter(c1,HOTWATER%in%c(1:2) & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(hotwaterDXX = sum(HHWT)) 
 
+
 # cellphone access
 cellN <- filter(c1,CELL==1 & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
