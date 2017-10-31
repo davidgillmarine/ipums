@@ -205,6 +205,7 @@ tvD <- filter(c1,TV%in%c(10:43) & GQ==10 & PERNUM==1) %>%
 # Radio ownership
 radioN <- filter(c1,RADIO==2 & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
+<<<<<<< HEAD
   summarize(radioNXX = sum(HHWT))
 radioD <- filter(c1,RADIO%in%c(1:2) & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
@@ -406,6 +407,14 @@ houseatt <- tot.popn[join.names]   %>%
   left_join(trashcollectN,by=join.names) %>%
   left_join(trashcollectD,by=join.names) %>%
   left_join(hhsize,by=join.names)
+=======
+  summarize(flabfXX= sum(PERWT))
+  
+empl <- labor %>%                    
+  left_join(civil,by=c("COUNTRY"="COUNTRY","YEAR"="YEAR","GEOLEV1"="GEOLEV1","GEOLEV2"="GEOLEV2")) %>%
+  left_join(unempl,by=c("COUNTRY"="COUNTRY","YEAR"="YEAR","GEOLEV1"="GEOLEV1","GEOLEV2"="GEOLEV2")) %>%
+  left_join(emplf,by=c("COUNTRY"="COUNTRY","YEAR"="YEAR","GEOLEV1"="GEOLEV1","GEOLEV2"="GEOLEV2")) 
+>>>>>>> 56d5ac5fd2a4c153fbe1f29397c4f50d8ce9ab6e
 
 c2 <- tot.popn %>%
   left_join(educ,by=join.names) %>%
