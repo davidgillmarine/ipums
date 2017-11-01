@@ -90,7 +90,7 @@ for (i in 1:length(clist)){
     summarize(popXX = sum(PERWT))
   
 #--Education                                    
-  # number of persons with hs degree or less (Secondary eduction)
+  # number of persons with hs degree or less (Secondary education)
   educsec <- filter(c1,EDATTAIND%in%(311:322) & AGE%in%c(25:100)) %>% # ages 25+ yrs
     group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
     summarize(edusecondXX = sum(PERWT))
@@ -104,12 +104,12 @@ for (i in 1:length(clist)){
     summarize(educterXX = sum(PERWT))
   
   # Percent of persons age 10+ literate(numerator)"
-  lit25N <- filter(c1,LIT==2 & AGE%in%c(25:100)) %>% # ages 25+ yrs
+  lit25N <- filter(c1,LIT==2 & AGE%in%c(10:100)) %>% # ages 25+ yrs
     group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
     summarize(lit25NXX = sum(PERWT))
   
   # Percent of persons age 10+ literate (denominator)"
-  lit25D <- filter(c1,LIT%in%c(1:2) & AGE%in%c(25:100)) %>% # ages 25+ yrs
+  lit25D <- filter(c1,LIT%in%c(1:2) & AGE%in%c(10:100)) %>% # ages 25+ yrs
     group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
     summarize(lit25DXX = sum(PERWT))
   
@@ -151,7 +151,7 @@ occprofD <- filter(c1,AGE%in%c(16:65) & EMPSTATD%in%c(100:120,140) & !OCCISCO%in
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(occprofDXX = sum(PERWT)) 
 
-# Percent of currently employed persons age 16 to 65 who are working in agriculture, fishing or forestry
+# Percent of currently employed persons age 16 to 65 who are working in agriculture or fisheries
 occagrN <- filter(c1,AGE%in%c(16:65) & EMPSTATD%in%c(100:120,140) & OCCISCO==6) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(occagrNXX = sum(PERWT)) 
@@ -178,7 +178,7 @@ refrigD <- filter(c1,REFRIG%in%c(1:2) & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(refrigDXX = sum(HHWT)) 
 
-# washer access
+# hot water access (water heater in unit)
 hotwaterN <- filter(c1,HOTWATER==2 & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(hotwaterNXX = sum(HHWT))
@@ -237,10 +237,10 @@ internetD <- filter(c1,INTERNET%in%c(1:2) & GQ==10 & PERNUM==1) %>%
   summarize(internetDXX = sum(HHWT)) 
 
 # Washer ownership
-washerN <- filter(c1,WASHER==2 & GQ==10 & PERNUM==1) %>%
+washerN <- filter(c1,WASHER%in%c(2:4) & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(washerNXX = sum(HHWT))
-washerD <- filter(c1,WASHER%in%c(1:2) & GQ==10 & PERNUM==1) %>%
+washerD <- filter(c1,WASHER%in%c(1:4) & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(washerDXX = sum(HHWT)) 
 
@@ -253,10 +253,10 @@ airconD <- filter(c1,AIRCON%in%c(10:29) & GQ==10 & PERNUM==1) %>%
   summarize(airconDXX = sum(HHWT)) 
 
 # Auto ownership
-autoN <- filter(c1,AUTOS%in%c(20:43) & GQ==10 & PERNUM==1) %>%
+autoN <- filter(c1,AUTOS%in%c(1:7) & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(autoNXX = sum(HHWT))
-autoD <- filter(c1,AUTOS%in%c(10:43) & GQ==10 & PERNUM==1) %>%
+autoD <- filter(c1,AUTOS%in%c(0:7) & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(autoDXX = sum(HHWT)) 
 
@@ -287,7 +287,7 @@ assets <- tot.popn[join.names]   %>%
 
 
 #-- Household attributes
-#Percetage of households with electricity
+#Percent of households with electricity
 electricN <- filter(c1,ELECTRIC==1 & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(electricNXX = sum(HHWT))
