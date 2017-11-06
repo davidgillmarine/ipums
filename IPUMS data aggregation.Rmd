@@ -104,21 +104,21 @@ for (i in 1:length(clist)){
     summarize(educterXX = sum(PERWT))
   
   # Percent of persons age 10+ literate(numerator)"
-  lit25N <- filter(c1,LIT==2 & AGE%in%c(10:100)) %>% # ages 25+ yrs
+  lit10N <- filter(c1,LIT==2 & AGE%in%c(10:100)) %>% # ages 25+ yrs
     group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-    summarize(lit25NXX = sum(PERWT))
+    summarize(LIT10NXX = sum(PERWT))
   
   # Percent of persons age 10+ literate (denominator)"
-  lit25D <- filter(c1,LIT%in%c(1:2) & AGE%in%c(10:100)) %>% # ages 25+ yrs
+  lit10D <- filter(c1,LIT%in%c(1:2) & AGE%in%c(10:100)) %>% # ages 25+ yrs
     group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-    summarize(lit25DXX = sum(PERWT))
+    summarize(LIT10DXX = sum(PERWT))
   
   educ <- tot.popn[join.names] %>% 
     left_join(educsec,by = join.names) %>% 
     left_join(educter,by = join.names) %>% 
     left_join(educD,by = join.names) %>% 
-    left_join(lit25N,by = join.names) %>% 
-    left_join(lit25D,by = join.names)
+    left_join(LIT10N,by = join.names) %>% 
+    left_join(LIT10D,by = join.names)
 
 #--Employment
 # Current labor force (employed and unemployed individuals between 16-65; excludes housework)
@@ -483,7 +483,7 @@ CSVextract('ipumsi_00037.csv')
 c4 <- all.data %>%
   mutate(peducsecXX=edusecondXX/educDXX;
          peducterXX=educterXX/educDXX;
-         plit25XX=lit25NXX/lit25DXX;
+         pLIT10XX=LIT10NXX/LIT10DXX;
          punempXX=unempXX/clfXX;
          plfpfemXX=lfpfemNXX/lfpfemDXX;
          poccprofXX=occprofNXX/occprofDXX;
