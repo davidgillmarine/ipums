@@ -1,14 +1,3 @@
----
-title: "IPUMS Data aggregation"
-author: "David Gill and Matheus De Nardo"
-date: "September 11, 2017"
-output: html_document
----
-
-## IPUMS data
-This code is used to aggregate social and economic variables from IPUMS at the Geolevel 1 and 2 scale. These data will be used to assess social and economic differences in MPA vs non-MPA communities, both in terms of placement and changes over time. Here data are derived from the IPUMS website on educational attainment and employment, as well as other demographic and economic variables.
-### Read in R packages
-```{r eval=FALSE}
 library(dplyr)
 library(ggplot2)
 library(tidyverse)
@@ -20,116 +9,51 @@ options(scipen=999,stringsAsFactors = F)
 sum2=function(x){sum(x,na.rm=TRUE)}
 mean2=function(x){mean(x,na.rm=TRUE)}
 
-#setwd("C:/Users/LocalAdmin/Desktop")
-#data.dir <- "E:/My Documents/Important Files/Work/SESYNC/Data analysis/IPUMS/ipums_extract"
+# Set working directory
 setwd("C:/Users/LocalAdmin/Documents/OneDrive - Conservation International 1/Data analysis/IPUMS")
 setwd("E:/My Documents/Important Files/Work/SESYNC/Data analysis/IPUMS/ipums_extract")    # location of downloaded microdata
-#dsn <- "E:/My Documents/Important Files/Work/SESYNC/GIS/IPUMS"# location of shapefiles
-```
 
-## Read in the data in ffdf format
-Reading files as a ffdf allows users to work with large dataframes without storing them in memory. Although they take quite a while to read into R and to convert to dataframes, they can be queried (i.e. you can select portions of the data you need) using the *filter* function.
-```{r eval=FALSE}
-#system.time(asia<- read.csv.ffdf(file="ipumsi_asia.csv", header=TRUE, VERBOSE=TRUE, 
-#                  first.rows=1000000, next.rows=1000000, colClasses=NA))
-#system.time(x <- fread('ipumsi_00028.csv',nrows=10000000))
-#headernames <- names(x)
-#pryr::object_size(asia)
-system.time(x <- fread('data/ipumsi_00049.csv/ipumsi_00049.csv', showProgress = T))
-
-```
-
-Remove most variables (except the important ones!) to free up RAM and the variable enviornment
-```{r eval=FALSE}
-rm(list=setdiff(ls(), c("x","asia","europe","namerica","samerica","africa","clist","IPUMSagg","CSVextract")))
-
-```
-
-
-Extract and write data for 1 country
-```{r eval=FALSE}
-unique(x$COUNTRY)
-c1 <- x %>%
-  filter(COUNTRY==218)
-
-fwrite(c1,"ipums_218.csv")
-```
-
-## Aggregation function
-This function does the following:
-
-* reads in data chunk from the csv
-* aggregates the data for the select variables of interest at the geolevel2 scale. 
-* writes the aggregated data to a new file called **out.table**
-
-The variables of interest are:
-
-* **Total population**: this gives us total population (based on person weights) within the geography of interest (*popXX*) 
-* **Education**: the % of the population who are 25+ years old, for whom educ. attainment is determined, with secondary (*phsXX*) or university (*pcolXX*) level education
-* **Unemployment**: the % of individuals within the total workforce (excluding inactive members), for whom employment status is determined, who are unemployed  (*punempXX*).
-* **Professional**: the % of individuals within the total employed workforce, for whom employment status is determined, who are employed in a professional occupation  (*pprofXX*). 
-* **Female labor force employment**: the % of individuals within the total employed workforce, for whom employment status is determined, who are employed in a professional occupation  (*pflabfXX*).  
-
-### Code test
-Use this subsection to test the code with 1 country
-```{r eval=FALSE}
+#---------------------------
+# read in data
 y <- "ipumsi_00037.csv"
 system.time(c1 <- fread(y))
 
-#clist <- unique(x$COUNTRY)       # get a list of all the countries in the dataset
-#i <- 1
-```
-
-### IPUMSagg function 
-```{r eval=FALSE}
-IPUMSagg <- function (x) {
-  ptm <- proc.time()               # to figure out how long it takes to run the function
-  clist <- unique(x$COUNTRY)       # get a list of all the countries in the dataset
-  out.table <<- data.frame()        # create an empty dataframe
-  join.names <- c("COUNTRY", "YEAR", "GEOLEV1", "GEOLEV2")
-  
-for (i in 1:length(clist)){
-  c1 <- filter(x,COUNTRY==clist[i])  # select 1 country in the list
-  c1 <- filter(c1,!is.na(GEOLEV1))   # remove entries without Geolevel data
-  c1$GEOLEV2 <- as.integer(c1$GEOLEV2)
-  
- if (nrow(c1)>0 & nrow(filter(c1,is.na(AGE)))/nrow(c1)<0.1) {  # run if countries are not missing most of the data
-
+#----------------------------------------------
 #-- Total population
-  tot.popn <- c1 %>%
-    group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-    summarize(popXX = sum(PERWT))
-  
+tot.popn <- c1 %>%
+  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
+  summarize(popXX = sum(PERWT))
+
 #--Education                                    
-  # number of persons with hs degree or less (Secondary education)
-  educsec <- filter(c1,EDATTAIND%in%(311:322) & AGE%in%c(25:100)) %>% # ages 25+ yrs
-    group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-    summarize(edusecondXX = sum(PERWT))
-  educD <- filter(c1,EDATTAIND%in%(100:400) & AGE%in%c(25:100)) %>% # ages 25+ yrs
-    group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-    summarize(educDXX = sum(PERWT))
-  
-  # number persons with at least a four year college degree
-  educter <- filter(c1,EDATTAIND==400 & AGE%in%c(25:100)) %>% # ages 25+ yrs
-    group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-    summarize(educterXX = sum(PERWT))
-  
-  # Percent of persons age 10+ literate(numerator)"
-  lit10N <- filter(c1,LIT==2 & AGE%in%c(10:100)) %>% # ages 25+ yrs
-    group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-    summarize(LIT10NXX = sum(PERWT))
-  
-  # Percent of persons age 10+ literate (denominator)"
-  lit10D <- filter(c1,LIT%in%c(1:2) & AGE%in%c(10:100)) %>% # ages 25+ yrs
-    group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-    summarize(LIT10DXX = sum(PERWT))
-  
-  educ <- tot.popn[join.names] %>% 
-    left_join(educsec,by = join.names) %>% 
-    left_join(educter,by = join.names) %>% 
-    left_join(educD,by = join.names) %>% 
-    left_join(LIT10N,by = join.names) %>% 
-    left_join(LIT10D,by = join.names)
+# number of persons with hs degree or less (Secondary education)
+educsec <- filter(c1,EDATTAIND%in%(311:322) & AGE%in%c(25:100)) %>% # ages 25+ yrs
+  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
+  summarize(edusecondXX = sum(PERWT))
+educD <- filter(c1,EDATTAIND%in%(100:400) & AGE%in%c(25:100)) %>% # ages 25+ yrs
+  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
+  summarize(educDXX = sum(PERWT))
+
+# number persons with at least a four year college degree
+educter <- filter(c1,EDATTAIND==400 & AGE%in%c(25:100)) %>% # ages 25+ yrs
+  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
+  summarize(educterXX = sum(PERWT))
+
+# Percent of persons age 10+ literate(numerator)"
+lit10N <- filter(c1,LIT==2 & AGE%in%c(10:100)) %>% # ages 25+ yrs
+  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
+  summarize(LIT10NXX = sum(PERWT))
+
+# Percent of persons age 10+ literate (denominator)"
+lit10D <- filter(c1,LIT%in%c(1:2) & AGE%in%c(10:100)) %>% # ages 25+ yrs
+  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
+  summarize(LIT10DXX = sum(PERWT))
+
+educ <- tot.popn[join.names] %>% 
+  left_join(educsec,by = join.names) %>% 
+  left_join(educter,by = join.names) %>% 
+  left_join(educD,by = join.names) %>% 
+  left_join(LIT10N,by = join.names) %>% 
+  left_join(LIT10D,by = join.names)
 
 #--Employment
 # Current labor force (employed and unemployed individuals between 16-65; excludes housework)
@@ -145,7 +69,7 @@ clf <- filter(c1,EMPSTATD%in%c(100:120,140:240) & AGE%in%c(16:65) & !OCCISCO%in%
 unempl <- filter(c1,EMPSTATD%in%c(200:240) & AGE%in%c(16:65) & !OCCISCO%in%c(10,97:99)) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(unempXX = sum(PERWT)) 
-  
+
 # Females 16 and over, not in armed forces (generally, employed or actively seeking employment)
 lfpfemN <- filter(c1,SEX==2 & EMPSTATD%in%c(100:120,140) & AGE%in%c(16:65) & !OCCISCO%in%c(10,97:99)) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
@@ -153,7 +77,7 @@ lfpfemN <- filter(c1,SEX==2 & EMPSTATD%in%c(100:120,140) & AGE%in%c(16:65) & !OC
 lfpfemD <- filter(c1,SEX==2 & EMPSTATD%in%c(100:120,140:240) & AGE%in%c(16:65) & !OCCISCO%in%c(10,97:99)) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(lfpfemDXX= sum(PERWT))
-  
+
 # Percent of workers in professional or technical occupations (excluding clerks)
 occprofN <- filter(c1,AGE%in%c(16:65) & EMPSTATD%in%c(100:120,140) & OCCISCO%in%c(1:3)) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
@@ -217,8 +141,8 @@ tvD <- filter(c1,TV%in%c(10:43) & GQ==10 & PERNUM==1) %>%
 # Radio ownership
 radioN <- filter(c1,RADIO==2 & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-<<<<<<< HEAD
-  summarize(radioNXX = sum(HHWT))
+  <<<<<<< HEAD
+summarize(radioNXX = sum(HHWT))
 radioD <- filter(c1,RADIO%in%c(1:2) & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(radioDXX = sum(HHWT)) 
@@ -421,7 +345,7 @@ houseatt <- tot.popn[join.names]   %>%
   left_join(hhsize,by=join.names)
 =======
   summarize(flabfXX= sum(PERWT))
-  
+
 empl <- labor %>%                    
   left_join(civil,by=c("COUNTRY"="COUNTRY","YEAR"="YEAR","GEOLEV1"="GEOLEV1","GEOLEV2"="GEOLEV2")) %>%
   left_join(unempl,by=c("COUNTRY"="COUNTRY","YEAR"="YEAR","GEOLEV1"="GEOLEV1","GEOLEV2"="GEOLEV2")) %>%
@@ -433,121 +357,3 @@ c2 <- tot.popn %>%
   left_join(empl,by=join.names) %>%
   left_join(assets, by=join.names) %>%
   left_join(houseatt,by=join.names)
-
-#write.csv(c2, 'IPUMS_test_final_output.csv', row.names=FALSE)
-   
-  c2$GEOLEV2 <- as.integer(c2$GEOLEV2)
-  out.table <<- rbind(out.table,as.data.frame(c2))
-  rm(c1)
-  print(paste0("Country ",i, " completed"))
-  }
-  else {
-  rm(c1)
-  print(paste0("Country ",i, " missing Geolevel data or numerous age records"))
-  } # end if else
-}   # end for loop
-proc.time() - ptm
-}   # end function
-```
-
-### CSVextract function 
-This function:
-
-1. uses **fread** from the data.table package to quickly read in the csv (1 )
-```{r eval=FALSE}
-# get number of rows in the entire file (1-2 min)
-CSVextract <- function(y) {
-ptm <- proc.time()               # to figure out how long it takes to run the function
-system.time(x <- fread(y,select="COUNTRY"))
-num.rows <- nrow(x)
-read.rows <- 10000000
-num.reps <- round(num.rows/read.rows,digits=0)
-num.reps <- ifelse(num.rows<read.rows*num.reps,num.reps-1,num.reps)
-all.data <<- data.frame()        # create an empty dataframe
-
-# start with first 10 million rows
-system.time(x <- fread(y,nrows=read.rows))
-headernames <- names(x)
-IPUMSagg(x)
-all.data <-rbind(out.table,all.data)
-rm(x)
-
-for (j in 1:num.reps){
-system.time(x <- fread(y,nrows=read.rows, skip=(j*read.rows+1),
-                       col.names = headernames))
-IPUMSagg(x)
-all.data <-rbind(out.table,all.data)
-rm(x)
-}
-all.data <<-all.data %>%
-  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-  summarise_all(funs(sum2), popXX:hhsizeXX)
-
-proc.time() - ptm
-}
-```
-
-Extract data from a csv
-```{r eval=FALSE}
-list <- list.files()
-CSVextract('ipumsi_00037.csv')
-c4 <- all.data %>%
-  mutate(peducsecXX=edusecondXX/educDXX;
-         peducterXX=educterXX/educDXX;
-         pLIT10XX=LIT10NXX/LIT10DXX;
-         punempXX=unempXX/clfXX;
-         plfpfemXX=lfpfemNXX/lfpfemDXX;
-         poccprofXX=occprofNXX/occprofDXX;
-         poccagrXX=occagrNXX/occagrDXX;
-         photwaterXX=hotwaterNXX/hotwaterDXX;
-         pcellXX=cellNXX/cellDXX;
-         punempXX=unempXX/clfXX;
-         punempXX=unempXX/clfXX;
-         punempXX=unempXX/clfXX;
-         punempXX=unempXX/clfXX;
-         punempXX=unempXX/clfXX;
-         punempXX=unempXX/clfXX;
-         punempXX=unempXX/clfXX;
-         punempXX=unempXX/clfXX;
-         punempXX=unempXX/clfXX;
-         punempXX=unempXX/clfXX;)
-
-
-write.csv(all.data,"test.csv")
-unique(all.data$COUNTRY)
-```
-
-## Compile all regions
-**After all the code is fixed and variables chosen**, run this section to organize the data so that there is only 1 row per geolevel unit. Finally, separate the geolevel 1 and 2 data and join to the geolevel shapefiles.
-```{r eval=FALSE}
-IPUMSagg(x)
-#summarise data
-c3 <- 
-
-head(glvl1.data)
-glvl1.data <- all.data %>%
-  filter(is.na(GEOLEV2)) %>%
-  gather(var,value, popXX:pprofXX) %>%
-  mutate(var1=paste0(gsub("X","",var),substr(YEAR,3,4)))%>%
-  select(-YEAR,-var,-GEOLEV2) %>%
-  spread(var1, value)
-
-glvl2.data <- all.data %>%
-  filter(!is.na(GEOLEV2)) %>%
-  gather(var,value, popXX:pprofXX) %>%
-  mutate(var1=paste0(gsub("X","",var),substr(YEAR,3,4)))%>%
-  select(-YEAR,-var) %>%
-  spread(var1, value)
-
-# Read in aMerge with the shapefiles
-
-Glvl1.shp <- readOGR(dsn,'world_geolev1')
-Glvl2.shp <- readOGR(dsn,'world_geolev2')
-
-Glvl1.shp2<- merge(Glvl1.shp,glvl1.data,by.x="GEOLEVEL1",by.y='GEOLEV1') # merge data
-writeOGR(Glvl1.shp2,dsn,'IPUMS_geo1',driver = "ESRI Shapefile")
-
-Glvl2.shp2<- merge(Glvl2.shp,glvl2.data,by.x="GEOLEVEL2",by.y='GEOLEV2') # merge data
-writeOGR(Glvl2.shp2,dsn,'IPUMS_geo2',driver = "ESRI Shapefile")
-
-```
