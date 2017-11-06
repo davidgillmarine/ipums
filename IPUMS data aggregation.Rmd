@@ -5,8 +5,6 @@ date: "September 11, 2017"
 output: html_document
 ---
 
-#Git Matheus test code
-
 ## IPUMS data
 This code is used to aggregate social and economic variables from IPUMS at the Geolevel 1 and 2 scale. These data will be used to assess social and economic differences in MPA vs non-MPA communities, both in terms of placement and changes over time. Here data are derived from the IPUMS website on educational attainment and employment, as well as other demographic and economic variables.
 ### Read in R packages
