@@ -1,9 +1,14 @@
+
+#if you need to install ffbase remove hashtags from next 2 lines
+#install.packages("devtools")
+#devtools::install_github("edwindj/ffbase2")
+
 library(dplyr)
 library(ggplot2)
 library(tidyverse)
 library(data.table)
-#library(ff)
-#library(ffbase2)
+library(ff)
+library(ffbase2)
 library(rgdal)
 options(scipen=999,stringsAsFactors = F)
 sum2=function(x){sum(x,na.rm=TRUE)}
@@ -13,10 +18,14 @@ mean2=function(x){mean(x,na.rm=TRUE)}
 setwd("C:/Users/LocalAdmin/Documents/OneDrive - Conservation International 1/Data analysis/IPUMS")
 setwd("E:/My Documents/Important Files/Work/SESYNC/Data analysis/IPUMS/ipums_extract")    # location of downloaded microdata
 
+
 #---------------------------
 # read in data
-y <- "ipumsi_00037.csv"
+y <- "ipums_218.csv"
 system.time(c1 <- fread(y))
+
+# ensure to join by all same variables
+join.names <- c("COUNTRY", "YEAR", "GEOLEV1", "GEOLEV2")
 
 #----------------------------------------------
 #-- Total population
@@ -41,19 +50,19 @@ educter <- filter(c1,EDATTAIND==400 & AGE%in%c(25:100)) %>% # ages 25+ yrs
 # Percent of persons age 10+ literate(numerator)"
 lit10N <- filter(c1,LIT==2 & AGE%in%c(10:100)) %>% # ages 25+ yrs
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-  summarize(LIT10NXX = sum(PERWT))
+  summarize(lit10NXX = sum(PERWT))
 
 # Percent of persons age 10+ literate (denominator)"
 lit10D <- filter(c1,LIT%in%c(1:2) & AGE%in%c(10:100)) %>% # ages 25+ yrs
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-  summarize(LIT10DXX = sum(PERWT))
+  summarize(lit10DXX = sum(PERWT))
 
 educ <- tot.popn[join.names] %>% 
   left_join(educsec,by = join.names) %>% 
   left_join(educter,by = join.names) %>% 
   left_join(educD,by = join.names) %>% 
-  left_join(LIT10N,by = join.names) %>% 
-  left_join(LIT10D,by = join.names)
+  left_join(lit10N,by = join.names) %>% 
+  left_join(lit10D,by = join.names)
 
 #--Employment
 # Current labor force (employed and unemployed individuals between 16-65; excludes housework)
@@ -141,9 +150,8 @@ tvD <- filter(c1,TV%in%c(10:43) & GQ==10 & PERNUM==1) %>%
 # Radio ownership
 radioN <- filter(c1,RADIO==2 & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-  <<<<<<< HEAD
-summarize(radioNXX = sum(HHWT))
-radioD <- filter(c1,RADIO%in%c(1:2) & GQ==10 & PERNUM==1) %>%
+  summarize(radioNXX = sum(HHWT))
+  radioD <- filter(c1,RADIO%in%c(1:2) & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(radioDXX = sum(HHWT)) 
 
@@ -342,15 +350,8 @@ houseatt <- tot.popn[join.names]   %>%
   left_join(roofD,by=join.names) %>%
   left_join(trashcollectN,by=join.names) %>%
   left_join(trashcollectD,by=join.names) %>%
-  left_join(hhsize,by=join.names)
-=======
-  summarize(flabfXX= sum(PERWT))
-
-empl <- labor %>%                    
-  left_join(civil,by=c("COUNTRY"="COUNTRY","YEAR"="YEAR","GEOLEV1"="GEOLEV1","GEOLEV2"="GEOLEV2")) %>%
-  left_join(unempl,by=c("COUNTRY"="COUNTRY","YEAR"="YEAR","GEOLEV1"="GEOLEV1","GEOLEV2"="GEOLEV2")) %>%
-  left_join(emplf,by=c("COUNTRY"="COUNTRY","YEAR"="YEAR","GEOLEV1"="GEOLEV1","GEOLEV2"="GEOLEV2")) 
->>>>>>> 56d5ac5fd2a4c153fbe1f29397c4f50d8ce9ab6e
+  left_join(hhsize,by=join.names) %>%
+  
 
 c2 <- tot.popn %>%
   left_join(educ,by=join.names) %>%
