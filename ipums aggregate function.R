@@ -358,3 +358,36 @@ c2 <- tot.popn %>%
   left_join(empl,by=join.names) %>%
   left_join(assets, by=join.names) %>%
   left_join(houseatt,by=join.names)
+
+c4 <- c2 %>%
+  mutate(peducsecXX=edusecondXX/educDXX,
+         peducterXX=educterXX/educDXX,
+         plit10XX=lit10NXX/lit10DXX,
+         punempXX=unempXX/clfXX,
+         plfpfemXX=lfpfemNXX/lfpfemDXX,
+         poccprofXX=occprofNXX/occprofDXX,
+         poccagrXX=occagrNXX/occagrDXX,
+         photwaterXX=hotwaterNXX/hotwaterDXX,
+         pcellXX=cellNXX/cellDXX,
+         prefrigXX=refrigNXX/refrigDXX,
+         ptvXX=tvNXX/tvDXX,
+         pradioXX=radioNXX/radioDXX,
+         pphoneXX=phoneNXX/phoneDXX,
+         pcomputerXX=computerNXX/computerDXX,
+         pinternetXX=internetNXX/internetDXX,
+         pwasherXX=washerNXX/washerDXX,
+         pairconpXX=airconNXX/airconDXX,
+         pautoXX=autoNXX/autoDXX,
+         pelectricXX=electricNXX/electricDXX,
+         pflushtoiletXX=flushtoiletNXX/flushtoiletDXX,
+         pcookelectXX=cookelectNXX/cookDXX,
+         pcookgasXX=cookgasNXX/cookDXX,
+         pcookwoodXX=cookwoodNXX/cookDXX,
+         ppipedXX=pipedNXX/pipedDXX,
+         psewageXX=sewageNXX/sewageDXX,
+         phomeownXX=homeownNXX/homeownDXX,
+         plandownXX=landownNXX/landownDXX,
+         proofmasonXX=roofmasonNXX/roofDXX,
+         proofmetalXX=roofmetalNXX/roofDXX,
+         proofwoodXX=roofwoodNXX/roofDXX,
+         trashcollectXX=trashcollectNXX/trashcollectDXX)
