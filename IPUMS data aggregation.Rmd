@@ -19,10 +19,12 @@ library(rgdal)
 options(scipen=999,stringsAsFactors = F)
 sum2=function(x){sum(x,na.rm=TRUE)}
 mean2=function(x){mean(x,na.rm=TRUE)}
-#memory.limit(size = 32000) 
+memory.limit(size = 32000) 
 
 # location of downloaded microdata (country csvs)
 loc_files <- 'E:/My Documents/Important Files/Work/SESYNC/Data analysis/IPUMS/data/ipumsi_countries/'
+file.list<- list.files(loc_files,recursive = T, full.names = F) # get list of files in folder
+
 # location of shapefiles
 dsn <- "E:/My Documents/Important Files/Work/SESYNC/GIS/IPUMS"# location of shapefiles
 ```
@@ -35,14 +37,14 @@ dsn <- "E:/My Documents/Important Files/Work/SESYNC/GIS/IPUMS"# location of shap
 4. try the code all the way to creating the shapefiles. 
 
 
-## Aggregation functions
+## Summing and aggregation functions
 There are two functions:
 
 **1. IPUMS_summary**
 This function does the following:
 
 * aggregates the data for the select variables of interest at the geolevel2 scale. 
-* writes the aggregated data to a new file called **out.table** with the summarized values and **out.table2** with the percentages
+* writes the aggregated data to a new file called **sum.table** with the summarized values and **pct.table** with the percentages
 
 **2. IPUMS_aggr**
 This function does the following:
@@ -71,10 +73,10 @@ if (nrow(x)>0 & nrow(filter(x,is.na(AGE)))/nrow(x)<0.1) {  # run if countries ar
 tot.popn <- x %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(popXX = sum(PERWT))
-
+ 
 #--Education                                    
-# number of persons with hs degree or less (Secondary education)
-  if (class(x$EDATTAIND)!="NULL" & !is.na(sum2(x$EDATTAIND))) {
+# number of persons with hs degree or less (Secondary education and post-secondary technical)
+  if (class(x$EDATTAIND)!="NULL" & !all(is.na(x$EDATTAIND))) {
 educsec <- filter(x,EDATTAIND%in%(311:322) & AGE%in%c(25:100)) %>% # ages 25+ yrs
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(edusecondXX = sum(PERWT))
@@ -87,31 +89,29 @@ educter <- filter(x,EDATTAIND==400 & AGE%in%c(25:100)) %>% # ages 25+ yrs
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(educterXX = sum(PERWT))
    }
+ # if EDATTAIND is missing but EDATTAIN is present
+#  else if (class(x$EDATTAIN)!="NULL" & all(!is.na(x$EDATTAIN))) {
+#educsec <- filter(x,EDATTAIN%in%(3) & AGE%in%c(25:100)) %>% # ages 25+ yrs
+#  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
+#  summarize(edusecondXX = sum(PERWT))
+#educD <- filter(x,EDATTAIN%in%(1:4) & AGE%in%c(25:100)) %>% # ages 25+ yrs
+#  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
+#  summarize(educDXX = sum(PERWT))
+
+# number persons with at least a four year college degree
+#educter <- filter(x,EDATTAIN==4 & AGE%in%c(25:100)) %>% # ages 25+ yrs
+#  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
+#  summarize(educterXX = sum(PERWT))
+#   }
   else{
+  print(paste0("EDATTAIND is either missing or blank for country ",x$COUNTRY[1]))
   educsec <- data.frame(tot.popn[,1:4],edusecondXX=NA);educD <- data.frame(tot.popn[,1:4],educDXX=NA);
   educter <- data.frame(tot.popn[,1:4],educterXX=NA);
   }
- # if EDATTAIND is missing but EDATTAIN is present
-  if (class(x$EDATTAIN)!="NULL" & !is.na(sum2(x$EDATTAIN))) {
-educsec <- filter(x,EDATTAIN%in%(3) & AGE%in%c(25:100)) %>% # ages 25+ yrs
-  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-  summarize(edusecondXX = sum(PERWT))
-educD <- filter(x,EDATTAIN%in%(1:4) & AGE%in%c(25:100)) %>% # ages 25+ yrs
-  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-  summarize(educDXX = sum(PERWT))
-
-# number persons with at least a four year college degree
-educter <- filter(x,EDATTAIN==4 & AGE%in%c(25:100)) %>% # ages 25+ yrs
-  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-  summarize(educterXX = sum(PERWT))
-   }
-  else{
-  educsec <- educsec;educD <- educD;
-  educter <- educter;
-  }
+  
 
 # Percent of persons age 10+ literate(numerator)"
-  if (class(x$LIT)!="NULL" & !is.na(sum2(x$LIT))) {
+  if (class(x$LIT)!="NULL"& !all(is.na(x$LIT))) {
 lit10N <- filter(x,LIT==2 & AGE%in%c(10:100)) %>% # ages 25+ yrs
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(lit10NXX = sum(PERWT))
@@ -139,8 +139,7 @@ educ <- tot.popn[join.names] %>%
 #  summarize(empclfXX = sum(PERWT))
 
 # Civilian labor force- persons 16 years and over (excluding armed forces where occupation is known)
-  if ((class(x$EMPSTATD)!="NULL" & !is.na(sum2(x$EMPSTATD))) & (class(x$OCCISCO)!="NULL" & !is.na(sum2(x$OCCISCO))) &
-      class(x$INDGEN)!="NULL" & !is.na(sum2(x$INDGEN))) {
+  if (class(x$EMPSTATD)!="NULL" & !all(is.na(x$EMPSTATD))) {
 clf <- filter(x,EMPSTATD%in%c(100:120,140:240) & AGE%in%c(16:65)) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>% #eliminating other column headers
   summarize(clfXX = sum(PERWT)) #can add abbreviated function due to <%> piping
@@ -156,22 +155,39 @@ lfpfemN <- filter(x,SEX==2 & EMPSTATD%in%c(100:120,140) & AGE%in%c(16:65)) %>%
 lfpfemD <- filter(x,SEX==2 & EMPSTATD%in%c(100:120,140:240) & AGE%in%c(16:65)) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(lfpfemDXX= sum(PERWT))
-
+   }
+  else{
+  print(paste0("EMPSTATD is either missing or blank for country ",x$COUNTRY[1]))
+  clf <- data.frame(tot.popn[,1:4],clfXX=NA);unempl <- data.frame(tot.popn[,1:4],unempXX=NA);
+  lfpfemN <- data.frame(tot.popn[,1:4],lfpfemNXX=NA);lfpfemD <- data.frame(tot.popn[,1:4],lfpfemDXX=NA);
+    }
 # Percent of workers in professional or technical occupations (excluding clerks)
+  if (class(x$EMPSTATD)!="NULL" & !all(is.na(x$EMPSTATD)) & class(x$OCCISCO)!="NULL" & !all(is.na(x$OCCISCO))) {
 occprofN <- filter(x,AGE%in%c(16:65) & EMPSTATD%in%c(100:120,140) & OCCISCO%in%c(1:3)) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(occprofNXX = sum(PERWT)) 
 occprofD <- filter(x,AGE%in%c(16:65) & EMPSTATD%in%c(100:120,140) & !OCCISCO%in%c(10,97:99)) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(occprofDXX = sum(PERWT)) 
+  }
+  else{
+  print(paste0("OCCISCO are either missing or blank for country ",x$COUNTRY[1]))
+  occprofN <- data.frame(tot.popn[,1:4],occprofNXX=NA);occprofD <- data.frame(tot.popn[,1:4],occprofDXX=NA)
+  }
 
 # Percent of currently employed persons age 16 to 65 who are working in agriculture or fisheries
+  if (class(x$EMPSTATD)!="NULL" & !all(is.na(x$EMPSTATD)) &  class(x$INDGEN)!="NULL" & !all(is.na(x$INDGEN))) {
 occagrN <- filter(x,AGE%in%c(16:65) & EMPSTATD%in%c(100:120,140) & INDGEN==10) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(occagrNXX = sum(PERWT)) 
 occagrD <- filter(x,AGE%in%c(16:65) & EMPSTATD%in%c(100:120,140) & !INDGEN%in%c(0,998:999)) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(occagrDXX = sum(PERWT)) 
+  }
+  else{
+  print(paste0("INDGEN are either missing or blank for country ",x$COUNTRY[1]))
+  occagrN <- data.frame(tot.popn[,1:4],occagrNXX=NA);occagrD <- data.frame(tot.popn[,1:4],occagrDXX=NA)
+  }
 
 empl <- tot.popn[join.names] %>%
   left_join(clf,by=join.names) %>%
@@ -182,65 +198,11 @@ empl <- tot.popn[join.names] %>%
   left_join(occprofD,by=join.names) %>%
   left_join(occagrN,by=join.names) %>%
   left_join(occagrD,by=join.names) 
-   }
-  else{
-  empl <- data.frame(tot.popn[,1:4],clfXX=NA)
-    }
-
-
-# Civilian labor force- persons 16 years and over (excluding armed forces where occupation is known)
-  if (class(x$EMPSTAT)!="NULL" & !is.na(sum2(x$EMPSTAT)) & class(x$OCCISCO)!="NULL" & !is.na(sum2(x$OCCISCO)) &
-      class(x$INDGEN)!="NULL" & !is.na(sum2(x$INDGEN))) {
-clf <- filter(x,EMPSTAT%in%c(1:2) & AGE%in%c(16:65)) %>%
-  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>% #eliminating other column headers
-  summarize(clfXX = sum(PERWT)) #can add abbreviated function due to <%> piping
-# Unemployment for individuals between 16-65 (of civilians)
-unempl <- filter(x,EMPSTAT%in%c(2) & AGE%in%c(16:65)) %>%
-  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-  summarize(unempXX = sum(PERWT)) 
-
-# Females 16 and over, not in armed forces (generally, employed or actively seeking employment)
-lfpfemN <- filter(x,SEX==2 & EMPSTAT%in%c(1) & AGE%in%c(16:65)) %>%
-  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-  summarize(lfpfemNXX= sum(PERWT))
-lfpfemD <- filter(x,SEX==2 & EMPSTAT%in%c(1:2) & AGE%in%c(16:65)) %>%
-  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-  summarize(lfpfemDXX= sum(PERWT))
-
-# Percent of workers in professional or technical occupations (excluding clerks)
-occprofN <- filter(x,AGE%in%c(16:65) & EMPSTAT%in%c(1) & OCCISCO%in%c(1:3)) %>%
-  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-  summarize(occprofNXX = sum(PERWT)) 
-occprofD <- filter(x,AGE%in%c(16:65) & EMPSTAT%in%c(1) & !OCCISCO%in%c(10,97:99)) %>%
-  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-  summarize(occprofDXX = sum(PERWT)) 
-
-# Percent of currently employed persons age 16 to 65 who are working in agriculture or fisheries
-occagrN <- filter(x,AGE%in%c(16:65) & EMPSTAT%in%c(1) & INDGEN==10) %>%
-  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-  summarize(occagrNXX = sum(PERWT)) 
-occagrD <- filter(x,AGE%in%c(16:65) & EMPSTAT%in%c(1) & !INDGEN%in%c(0,998:999)) %>%
-  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-  summarize(occagrDXX = sum(PERWT)) 
-
-empl <- tot.popn[join.names] %>%
-  left_join(clf,by=join.names) %>%
-  left_join(unempl,by=join.names) %>%
-  left_join(lfpfemN,by=join.names) %>%
-  left_join(lfpfemD,by=join.names) %>%
-  left_join(occprofN,by=join.names) %>%
-  left_join(occprofD,by=join.names) %>%
-  left_join(occagrN,by=join.names) %>%
-  left_join(occagrD,by=join.names) 
-   }
-  else{
-  empl <- empl
-    }
 
 
 #--Assets
 # Refrigerator ownership
-  if (class(x$REFRIG)!="NULL" & !is.na(sum2(x$REFRIG))) {
+  if (class(x$REFRIG)!="NULL" & !all(is.na(x$REFRIG))) {
 refrigN <- filter(x,REFRIG==2 & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(refrigNXX = sum(HHWT))
@@ -253,7 +215,7 @@ refrigD <- filter(x,REFRIG%in%c(1:2) & GQ==10 & PERNUM==1) %>%
     }
 
 # hot water access (water heater in unit)
-  if (class(x$HOTWATER)!="NULL" & !is.na(sum2(x$HOTWATER))) {
+  if (class(x$HOTWATER)!="NULL" & !all(is.na(x$HOTWATER))) {
 hotwaterN <- filter(x,HOTWATER==2 & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(hotwaterNXX = sum(HHWT))
@@ -266,7 +228,7 @@ hotwaterD <- filter(x,HOTWATER%in%c(1:2) & GQ==10 & PERNUM==1) %>%
     }
 
 # cellphone access
-  if (class(x$CELL)!="NULL" & !is.na(sum2(x$CELL))) {
+  if (class(x$CELL)!="NULL" & !all(is.na(x$CELL))) {
   cellN <- filter(x,CELL==1 & GQ==10 & PERNUM==1) %>%
         group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
         summarize(cellNXX = sum(HHWT))
@@ -280,7 +242,7 @@ hotwaterD <- filter(x,HOTWATER%in%c(1:2) & GQ==10 & PERNUM==1) %>%
 
 
 # TV ownership
-  if (class(x$TV)!="NULL" & !is.na(sum2(x$TV))) {
+  if (class(x$TV)!="NULL" & !all(is.na(x$TV))) {
 tvN <- filter(x,TV%in%c(20:43) & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(tvNXX = sum(HHWT))
@@ -293,7 +255,7 @@ tvD <- filter(x,TV%in%c(10:43) & GQ==10 & PERNUM==1) %>%
     }
 
 # Radio ownership
-  if (class(x$RADIO)!="NULL"& !is.na(sum2(x$RADIO))) {
+  if (class(x$RADIO)!="NULL" & !all(is.na(x$RADIO))) {
 radioN <- filter(x,RADIO==2 & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(radioNXX = sum(HHWT))
@@ -306,7 +268,7 @@ radioD <- filter(x,RADIO%in%c(1:2) & GQ==10 & PERNUM==1) %>%
     }
 
 # phone ownership
-  if (class(x$PHONE)!="NULL" & !is.na(sum2(x$PHONE))) {
+  if (class(x$PHONE)!="NULL" & !all(is.na(x$PHONE))) {
 phoneN <- filter(x,PHONE==2 & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(phoneNXX = sum(HHWT))
@@ -319,7 +281,7 @@ phoneD <- filter(x,PHONE%in%c(1:2) & GQ==10 & PERNUM==1) %>%
     }
 
 # computer ownership
-  if (class(x$COMPUTER)!="NULL" & !is.na(sum2(x$COMPUTER))) {
+  if (class(x$COMPUTER)!="NULL" & !all(is.na(x$COMPUTER))) {
 computerN <- filter(x,COMPUTER==2 & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(computerNXX = sum(HHWT))
@@ -332,7 +294,7 @@ computerD <- filter(x,COMPUTER%in%c(1:2) & GQ==10 & PERNUM==1) %>%
     }
 
 # internet access
-  if (class(x$INTERNET)!="NULL" & !is.na(sum2(x$INTERNET))) {
+  if (class(x$INTERNET)!="NULL" & !all(is.na(x$INTERNET))) {
 internetN <- filter(x,INTERNET==2 & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(internetNXX = sum(HHWT))
@@ -345,7 +307,7 @@ internetD <- filter(x,INTERNET%in%c(1:2) & GQ==10 & PERNUM==1) %>%
     }
 
 # Washer ownership
-  if (class(x$WASHER)!="NULL" & !is.na(sum2(x$WASHER))) {
+  if (class(x$WASHER)!="NULL" & !all(is.na(x$WASHER))) {
 washerN <- filter(x,WASHER%in%c(2:4) & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(washerNXX = sum(HHWT))
@@ -358,7 +320,7 @@ washerD <- filter(x,WASHER%in%c(1:4) & GQ==10 & PERNUM==1) %>%
     }
 
 # Air-conditioner ownership
-  if (class(x$AIRCON)!="NULL" & !is.na(sum2(x$AIRCON))) {
+  if (class(x$AIRCON)!="NULL" & !all(is.na(x$AIRCON))) {
 airconN <- filter(x,AIRCON%in%c(20:29) & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(airconNXX = sum(HHWT))
@@ -371,7 +333,7 @@ airconD <- filter(x,AIRCON%in%c(10:29) & GQ==10 & PERNUM==1) %>%
     }
 
 # Auto ownership
-  if (class(x$AUTOS)!="NULL" & !is.na(sum2(x$AUTOS))) {
+  if (class(x$AUTOS)!="NULL" & !all(is.na(x$AUTOS))) {
 autoN <- filter(x,AUTOS%in%c(1:7) & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(autoNXX = sum(HHWT))
@@ -411,7 +373,7 @@ assets <- tot.popn[join.names]   %>%
 
 #-- Household attributes
 #Percent of households with electricity
-  if (class(x$ELECTRIC)!="NULL" & !is.na(sum2(x$ELECTRIC))) {
+  if (class(x$ELECTRIC)!="NULL" & !all(is.na(x$ELECTRIC))) {
 electricN <- filter(x,ELECTRIC==1 & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(electricNXX = sum(HHWT))
@@ -424,7 +386,7 @@ electricD <- filter(x,ELECTRIC%in%c(1:2) & GQ==10 & PERNUM==1) %>%
     }
 
 #Percent of households with a flush toilet
-  if (class(x$TOILET)!="NULL" & !is.na(sum2(x$TOILET))) {
+  if (class(x$TOILET)!="NULL" & !all(is.na(x$TOILET))) {
 flushtoiletN <- filter(x,TOILET==21 & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize( flushtoiletNXX = sum(HHWT))
@@ -438,7 +400,7 @@ flushtoiletD <- filter(x,TOILET%in%c(10:23) & GQ==10 & PERNUM==1) %>%
 
 # Cooking fuel
 #Electricity
-  if (class(x$FUELCOOK)!="NULL" & !is.na(sum2(x$FUELCOOK))) {
+  if (class(x$FUELCOOK)!="NULL" & !all(is.na(x$FUELCOOK))) {
 cookelectN <- filter(x,FUELCOOK==20 & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(cookelectNXX = sum(HHWT))
@@ -460,7 +422,7 @@ cookwoodN <- filter(x,FUELCOOK%in%c(50:56) & GQ==10 & PERNUM==1) %>%
     }
 
 #Percentage of households with access to piped water
-  if (class(x$WATSUP)!="NULL" & !is.na(sum2(x$WATSUP))) {
+  if (class(x$WATSUP)!="NULL" & !all(is.na(x$WATSUP))) {
 pipedN <- filter(x,WATSUP%in%c(10:18) & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(pipedNXX = sum(HHWT))
@@ -473,7 +435,7 @@ pipedD <- filter(x,WATSUP%in%c(10:20) & GQ==10 & PERNUM==1) %>%
     }
 
 #Percentage of households with access to sewage facilities
-  if (class(x$SEWAGE)!="NULL" & !is.na(sum2(x$SEWAGE))) {
+  if (class(x$SEWAGE)!="NULL" & !all(is.na(x$SEWAGE))) {
 sewageN <- filter(x,SEWAGE%in%c(10:12) & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(sewageNXX = sum(HHWT))
@@ -486,7 +448,7 @@ sewageD <- filter(x,SEWAGE%in%c(10:20) & GQ==10 & PERNUM==1) %>%
     }
 
 #Percentage household ownership
-  if (class(x$OWNERSHIP)!="NULL" & !is.na(sum2(x$OWNERSHIP))) {
+  if (class(x$OWNERSHIP)!="NULL" & !all(is.na(x$OWNERSHIP))) {
 homeownN <- filter(x,OWNERSHIP==1 & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(homeownNXX = sum(HHWT))
@@ -499,7 +461,7 @@ homeownD <- filter(x,OWNERSHIP%in%c(1:2) & GQ==10 & PERNUM==1) %>%
     }
 
 #Percentage land ownership
-  if (class(x$LANDOWN)!="NULL" & !is.na(sum2(x$LANDOWN))) {
+  if (class(x$LANDOWN)!="NULL" & !all(is.na(x$LANDOWN))) {
 landownN <- filter(x,LANDOWN%in%c(10:14) & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(landownNXX = sum(HHWT))
@@ -513,7 +475,7 @@ landownD <- filter(x,LANDOWN%in%c(10:30) & GQ==10 & PERNUM==1) %>%
 
 #Roof types
 # Masonary, concrete, tiles
-  if (class(x$ROOF)!="NULL" & !is.na(sum2(x$ROOF))) {
+  if (class(x$ROOF)!="NULL" & !all(is.na(x$ROOF))) {
 roofmasonN <- filter(x,ROOF%in%c(10:29) & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(roofmasonNXX = sum(HHWT))
@@ -536,10 +498,10 @@ roofwoodN <- filter(x,ROOF%in%c(40:61) & GQ==10 & PERNUM==1) %>%
 
 #trash
 # Collected or not collected
-  if (class(x$TRASH)!="NULL") {
+  if (class(x$TRASH)!="NULL" & !all(is.na(x$TRASH))) {
 trashcollectN <- filter(x,TRASH%in%c(10:14) & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-  summarize(trashcollectNXX = sum(HHWT))
+  summarize(trashcollectNXX = sum(HHWT)*)
 trashcollectD <- filter(x,TRASH%in%c(10:39) & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(trashcollectDXX = sum(HHWT))
@@ -549,10 +511,12 @@ trashcollectD <- filter(x,TRASH%in%c(10:39) & GQ==10 & PERNUM==1) %>%
     }
 
 #Person per household                                      
-hhsize <- filter(x, GQ==10 & PERNUM==1) %>% 
+hhsizeN <- filter(x, GQ==10 & PERNUM==1) %>% 
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-  summarize(hhsizeXX = sum2(PERSONS*HHWT)/sum2(HHWT))
-
+  summarize(hhsizeNXX = sum2(PERSONS*HHWT))
+hhsizeD <- filter(x, GQ==10 & PERNUM==1) %>% 
+  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
+  summarize(hhsizeDXX = sum2(HHWT))
 
 houseatt <- tot.popn[join.names]   %>%
   left_join(electricN,by=join.names) %>%
@@ -577,19 +541,23 @@ houseatt <- tot.popn[join.names]   %>%
   left_join(roofD,by=join.names) %>%
   left_join(trashcollectN,by=join.names) %>%
   left_join(trashcollectD,by=join.names) %>%
-  left_join(hhsize,by=join.names)
-  
+  left_join(hhsizeN,by=join.names) %>%
+  left_join(hhsizeD,by=join.names)   
 
 c2 <- tot.popn %>%
   left_join(educ,by=join.names) %>%
   left_join(empl,by=join.names) %>%
   left_join(assets, by=join.names) %>%
-  left_join(houseatt,by=join.names) 
+  left_join(houseatt,by=join.names) %>%
+  # to identify countries with ambiguous or missing data for education, employment, and flush toilets
+  mutate(edu.detail=ifelse(class(x$EDATTAIND)!="NULL" & all(!is.na(x$EDATTAIND)),1,0),
+         empl.detail=ifelse((class(x$EMPSTATD)!="NULL" & all(!is.na(x$EMPSTATD))) & (class(x$OCCISCO)!="NULL" & all(!is.na(x$OCCISCO))),1,0),
+         flusht.detail=ifelse("20"%in%unique(x$TOILET),0,1))
 
 #write.csv(c2, 'IPUMS_test_final_output.csv', row.names=FALSE)
    
-  out.table <<- rbind(out.table,as.data.frame(c2))
-# rm(list=setdiff(ls(), c("x","IPUMS_summary","IPUMS_aggr","CSVextract","sum2","out.table")))
+  sum.table <<- rbind(sum.table,as.data.frame(c2))
+# rm(list=setdiff(ls(), c("x","IPUMS_summary","IPUMS_aggr","CSVextract","sum2","sum.table")))
  rm (x)
  # print(paste0("Country ",i, " completed"))
   }
@@ -601,19 +569,33 @@ c2 <- tot.popn %>%
 ```
 
 ### IPUMS_aggr function
-Loops through all csvs and creates 2 summary tables, one with the sums and the other with the percentages
+Loops through all csvs and creates 2 summary tables, one with the sums and the other with the percentages.
+**Note** Forced to change Geolevel1 values where there was Geolevel2 data as some records had different Geolevel1 data for the same year and we are grouping by all these values.
 ```{r eval=FALSE}
 IPUMS_aggr <- function(f) {
 ptm <- proc.time()               # to figure out how long it takes to run the function
-file.list<- list.files(loc_files,recursive = T, full.names = F) # get list of files in folder
-out.table <<- data.frame()        # create an empty dataframe
+sum.table <<- data.frame()        # create an empty dataframe
   for (k in f){
 #print file name
-  print(file.list[k])
+  print(paste0(k,": Country ",gsub("ipums_|.csv","",file.list[k])))
   x <- fread(paste0(loc_files,file.list[k]), showProgress = T)
   IPUMS_summary(x)
   }
-out.table2 <- out.table %>%
+
+# impute the same GEOLEV1 value (using the 1st one) for each GEOLEV2. Creates duplicates otherwise
+orig.table <<- sum.table # retain original table with original GEOLEV1 values... just in case
+geo2 <-unique(sum.table$GEOLEV2)
+geo2 <- subset(geo2,!is.na(geo2))
+for (l in geo2) {
+    sum.table$GEOLEV1[sum.table$GEOLEV2==l] <- sum.table$GEOLEV1[sum.table$GEOLEV2==l][1]
+}
+sum.table <- sum.table  %>%
+        group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2,edu.detail,empl.detail,flusht.detail) %>%
+        summarise_all(sum2)
+
+# calculate percentages
+pct.table <- sum.table %>%
+  select(COUNTRY:GEOLEV2,edu.detail,empl.detail,flusht.detail,popXX:hhsizeDXX) %>%
   mutate(psecXX=edusecondXX/educDXX,
          pcterXX=educterXX/educDXX,
          plit10XX=lit10NXX/lit10DXX,
@@ -644,40 +626,47 @@ out.table2 <- out.table %>%
          prfmasonXX=roofmasonNXX/roofDXX,
          prfmetalXX=roofmetalNXX/roofDXX,
          prfwoodXX=roofwoodNXX/roofDXX,
-         ptrashXX=trashcollectNXX/trashcollectDXX)
+         ptrashXX=trashcollectNXX/trashcollectDXX,
+         hhsizeXX=hhsizeNXX/hhsizeDXX) 
 
 #remove original variables
-rm.names <- names(out.table[,-c(1:5,63)])
-out.table2 <<- out.table2[,!names(out.table2)%in%rm.names]
-names(out.table2)
-
-#rm(list=setdiff(ls(), c("IPUMSagg","IPUMS_summary","sum2","out.table","out.table2","loc_files","file.list","dsn")))
+rm.names <- names(sum.table[,-c(1:8)])
+pct.table <<- pct.table[,!names(pct.table)%in%rm.names]
+sum.table<<-sum.table
 proc.time() - ptm
 }
-  # show how many NAs in each field
+
+```
+## Run the functions
+Get the list of country csv files in the *loc_files* folder and run the function *IPUMS_aggr* for all files (1:length(file.list)) or for select ones (e.g. (1),(2:10))
+```{r eval=FALSE}
+IPUMS_aggr(1:length(file.list)) # all files
+IPUMS_aggr(76) # select files
+
+rm(list=setdiff(ls(), c("IPUMS_aggr","IPUMS_summary","sum2","sum.table","pct.table","loc_files","file.list","dsn")))
+# show how many NAs in each field
 #  apply(x, 2, function(x) paste0(round(sum(is.na(x))/length(x)*100,1),"%"))
 ```
 
-## Compile all regions
+
+## Compile GIS and tabular data
 **After all the code is fixed and variables chosen**, run this section to organize the data so that there is only 1 row per geolevel unit. Finally, separate the geolevel 1 and 2 data and join to the geolevel shapefiles.
 ```{r eval=FALSE}
-
-IPUMS_aggr(1:length(file.list)) # all files
-IPUMS_aggr(1) # just the 1st file
-
-#-- Geolevel 1 data
-glvl1.data <- out.table2 %>%
+  #-- Geolevel 1 data
+glvl1.data <- as.data.frame(pct.table) %>%
+  mutate(popXX=popXX/1000) %>%
   filter(is.na(GEOLEV2)) %>%
-  gather(var,value, popXX:ptrashXX) %>%
-  mutate(var1=paste0(gsub("X","",var),substr(YEAR,3,4)))%>%
+  gather(var,value, edu.detail:hhsizeXX) %>%
+  mutate(var1=paste0(gsub("X","",var),substr(YEAR,3,4))) %>%
   select(-YEAR,-var,-GEOLEV2) %>%
   spread(var1, value) %>%
   rename(GEOLEVEL1=GEOLEV1)%>%
-  mutate(GEOLEVEL2=NA)
+  mutate(GEOLEVEL2=NA) 
 
+glvl1.data$GEOLEVEL1[duplicated(glvl1.data$GEOLEVEL1)] # should be no duplicates
 
 # create decadal means
-var.names <-  gsub('XX','',names(out.table2[-c(1:4)]))
+var.names <-  gsub('XX','',names(pct.table[-c(1:7)]))
 for (i in 1:length(var.names)){
 #1960s
 var.names60 <- grep(paste0(var.names[i],'6'),names(glvl1.data),value = T)
@@ -717,19 +706,21 @@ glvl1.data[,paste0(var.names[i],'10s')] <- ifelse(length(var.names10)>0,
                                                    glvl1.data[,paste0(var.names[i],'10s')])
 }
 
-
-#-- Geolevel 2 data
-glvl2.data <- out.table2 %>%
+  #-- Geolevel 2 data
+glvl2.data <- as.data.frame(pct.table) %>%
+  mutate(popXX=popXX/100000) %>%
   filter(!is.na(GEOLEV2)) %>%
-  gather(var,value, popXX:ptrashXX) %>%
+  gather(var,value, edu.detail:hhsizeXX) %>%
   mutate(var1=paste0(gsub("X","",var),substr(YEAR,3,4)))%>%
   select(-YEAR,-var) %>%
   spread(var1, value) %>%
   rename(GEOLEVEL1=GEOLEV1,
          GEOLEVEL2=GEOLEV2)
 
+glvl2.data$GEOLEVEL2[duplicated(glvl2.data$GEOLEVEL2)]# should be no duplicates
+
 # create decadal means
-var.names <-  gsub('XX','',names(out.table2[-c(1:4)]))
+var.names <-  gsub('XX','',names(pct.table[-c(1:7)]))
 for (i in 1:length(var.names)){
 #1960s
 var.names60 <- grep(paste0(var.names[i],'6'),names(glvl2.data),value = T)
@@ -768,20 +759,24 @@ glvl2.data[,paste0(var.names[i],'10s')] <- ifelse(length(var.names10)>0,
                                                    as.data.frame(rowMeans(glvl2.data[var.names10],na.rm = T)),
                                                    glvl2.data[,paste0(var.names[i],'10s')])
 }
+
 ```
 
 
 # Join with spatial data
 ```{r eval=FALSE}
-names(Glvl1_data.shp)[1:10];names(Glvl2_data.shp)[1:10]
 # Read in aMerge with the shapefiles
 Glvl1.shp <- readOGR(dsn,'world_geolev1')
 Glvl2.shp <- readOGR(dsn,'world_geolev2')
 
 # create lists of variable names to select and re-order variable names to line up in the shapefiles
+# compiling decadal means only
 var.names1 <- c("COUNTRY","GEOLEVEL1","GEOLEVEL2",grep('0s',names(glvl1.data),value = T))
 var.names2 <- c("COUNTRY","GEOLEVEL1","GEOLEVEL2",grep('0s',names(glvl1.data),value = T))
-name.order <- c("GEOLEVEL1","GEOLEVEL2","CNTRY_NAME","ADMIN_NAME","CNTRY_CODE","BPL_CODE",grep('0s',names(glvl1.data),value = T))
+identical(var.names1,var.names2)  # true?
+name.order <- c("GEOLEVEL1","GEOLEVEL2","CNTRY_NAME","ADMIN_NAME","CNTRY_CODE","BPL_CODE",
+                grep('0s',names(glvl1.data),value = T))
+#names(Glvl1_data.shp)[1:10];names(Glvl2_data.shp)[1:10]
   
 # merge each shapefile with the data and merge the 2 shapefiles together
 Glvl1_data.shp<- merge(Glvl1.shp,glvl1.data[var.names1],by="GEOLEVEL1") # merge data
@@ -789,8 +784,17 @@ Glvl1_data.shp <- Glvl1_data.shp[name.order]
 Glvl2_data.shp<- merge(Glvl2.shp,glvl2.data[var.names2],by="GEOLEVEL2") # merge data
 Glvl2_data.shp <- Glvl2_data.shp[name.order]
 all_data.shp <- rbind(Glvl1_data.shp,Glvl2_data.shp)
-writeOGR(all_data.shp,dsn,'IPUMS_geodata',driver = "ESRI Shapefile")
+writeOGR(all_data.shp,dsn,'IPUMS_geodata',driver = "ESRI Shapefile",overwrite_layer=TRUE,layer_options = "RESIZE=YES")
+
+
+# output the tabluar data as csv
+fwrite(all_data.shp@data,paste0(dsn,"/IPUMS_geodata_decadal_11Nov17.csv"))  # decadal values
+fwrite(sum.table,paste0(dsn,"/IPUMS_geodata_sums_11Nov17.csv")) # sums
+fwrite(pct.table,paste0(dsn,"/IPUMS_geodata_pct_11Nov17.csv"))
+fwrite(orig.table,paste0(dsn,"/IPUMS_geodata_pct_11Nov17.csv"))
+
 ```
+
 
 
 # END
