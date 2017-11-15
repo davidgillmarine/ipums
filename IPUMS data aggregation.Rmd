@@ -134,39 +134,39 @@ educ <- tot.popn[join.names] %>%
 
 #--Employment
 # Current labor force (employed and unemployed individuals between 16-65; excludes housework)
-#empclf <- filter(x,EMPSTATD%in%c(100:240) & AGE%in%c(16:65)) %>%
+#emptlf <- filter(x,EMPSTATD%in%c(100:240) & AGE%in%c(16:65)) %>%
 #  group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-#  summarize(empclfXX = sum(PERWT))
+#  summarize(emptlfXX = sum(PERWT))
 
-# Civilian labor force- persons 16 years and over (excluding armed forces where occupation is known)
+# Total labor force- persons 16 years and over
   if (class(x$EMPSTATD)!="NULL" & !all(is.na(x$EMPSTATD))) {
-clf <- filter(x,EMPSTATD%in%c(100:120,140:240) & AGE%in%c(16:65)) %>%
+tlf <- filter(x,EMPSTATD%in%c(100:240) & AGE%in%c(16:65)) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>% #eliminating other column headers
-  summarize(clfXX = sum(PERWT)) #can add abbreviated function due to <%> piping
+  summarize(tlfXX = sum(PERWT)) #can add abbreviated function due to <%> piping
 # Unemployment for individuals between 16-65 (of civilians)
 unempl <- filter(x,EMPSTATD%in%c(200:240) & AGE%in%c(16:65)) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(unempXX = sum(PERWT)) 
 
 # Females 16 and over, not in armed forces (generally, employed or actively seeking employment)
-lfpfemN <- filter(x,SEX==2 & EMPSTATD%in%c(100:120,140) & AGE%in%c(16:65)) %>%
+lfpfemN <- filter(x,SEX==2 & EMPSTATD%in%c(100:140) & AGE%in%c(16:65)) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(lfpfemNXX= sum(PERWT))
-lfpfemD <- filter(x,SEX==2 & EMPSTATD%in%c(100:120,140:240) & AGE%in%c(16:65)) %>%
+lfpfemD <- filter(x,SEX==2 & EMPSTATD%in%c(100:240) & AGE%in%c(16:65)) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(lfpfemDXX= sum(PERWT))
    }
   else{
   print(paste0("EMPSTATD is either missing or blank for country ",x$COUNTRY[1]))
-  clf <- data.frame(tot.popn[,1:4],clfXX=NA);unempl <- data.frame(tot.popn[,1:4],unempXX=NA);
+  tlf <- data.frame(tot.popn[,1:4],tlfXX=NA);unempl <- data.frame(tot.popn[,1:4],unempXX=NA);
   lfpfemN <- data.frame(tot.popn[,1:4],lfpfemNXX=NA);lfpfemD <- data.frame(tot.popn[,1:4],lfpfemDXX=NA);
     }
 # Percent of workers in professional or technical occupations (excluding clerks)
   if (class(x$EMPSTATD)!="NULL" & !all(is.na(x$EMPSTATD)) & class(x$OCCISCO)!="NULL" & !all(is.na(x$OCCISCO))) {
-occprofN <- filter(x,AGE%in%c(16:65) & EMPSTATD%in%c(100:120,140) & OCCISCO%in%c(1:3)) %>%
+occprofN <- filter(x,AGE%in%c(16:65) & EMPSTATD%in%c(100:140) & OCCISCO%in%c(1:3)) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(occprofNXX = sum(PERWT)) 
-occprofD <- filter(x,AGE%in%c(16:65) & EMPSTATD%in%c(100:120,140) & !OCCISCO%in%c(10,97:99)) %>%
+occprofD <- filter(x,AGE%in%c(16:65) & EMPSTATD%in%c(100:140) & !OCCISCO%in%c(10,97:99)) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(occprofDXX = sum(PERWT)) 
   }
@@ -177,10 +177,10 @@ occprofD <- filter(x,AGE%in%c(16:65) & EMPSTATD%in%c(100:120,140) & !OCCISCO%in%
 
 # Percent of currently employed persons age 16 to 65 who are working in agriculture or fisheries
   if (class(x$EMPSTATD)!="NULL" & !all(is.na(x$EMPSTATD)) &  class(x$INDGEN)!="NULL" & !all(is.na(x$INDGEN))) {
-occagrN <- filter(x,AGE%in%c(16:65) & EMPSTATD%in%c(100:120,140) & INDGEN==10) %>%
+occagrN <- filter(x,AGE%in%c(16:65) & EMPSTATD%in%c(100:140) & INDGEN==10) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(occagrNXX = sum(PERWT)) 
-occagrD <- filter(x,AGE%in%c(16:65) & EMPSTATD%in%c(100:120,140) & !INDGEN%in%c(0,998:999)) %>%
+occagrD <- filter(x,AGE%in%c(16:65) & EMPSTATD%in%c(100:140) & !INDGEN%in%c(0,998:999)) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(occagrDXX = sum(PERWT)) 
   }
@@ -190,7 +190,7 @@ occagrD <- filter(x,AGE%in%c(16:65) & EMPSTATD%in%c(100:120,140) & !INDGEN%in%c(
   }
 
 empl <- tot.popn[join.names] %>%
-  left_join(clf,by=join.names) %>%
+  left_join(tlf,by=join.names) %>%
   left_join(unempl,by=join.names) %>%
   left_join(lfpfemN,by=join.names) %>%
   left_join(lfpfemD,by=join.names) %>%
@@ -501,7 +501,7 @@ roofwoodN <- filter(x,ROOF%in%c(40:61) & GQ==10 & PERNUM==1) %>%
   if (class(x$TRASH)!="NULL" & !all(is.na(x$TRASH))) {
 trashcollectN <- filter(x,TRASH%in%c(10:14) & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
-  summarize(trashcollectNXX = sum(HHWT)*)
+  summarize(trashcollectNXX = sum(HHWT))
 trashcollectD <- filter(x,TRASH%in%c(10:39) & GQ==10 & PERNUM==1) %>%
   group_by(COUNTRY,YEAR,GEOLEV1,GEOLEV2) %>%
   summarize(trashcollectDXX = sum(HHWT))
@@ -599,7 +599,7 @@ pct.table <- sum.table %>%
   mutate(psecXX=edusecondXX/educDXX,
          pcterXX=educterXX/educDXX,
          plit10XX=lit10NXX/lit10DXX,
-         punempXX=unempXX/clfXX,
+         punempXX=unempXX/tlfXX,
          plfpfemXX=lfpfemNXX/lfpfemDXX,
          pprofXX=occprofNXX/occprofDXX,
          pagrXX=occagrNXX/occagrDXX,
@@ -641,9 +641,9 @@ proc.time() - ptm
 Get the list of country csv files in the *loc_files* folder and run the function *IPUMS_aggr* for all files (1:length(file.list)) or for select ones (e.g. (1),(2:10))
 ```{r eval=FALSE}
 IPUMS_aggr(1:length(file.list)) # all files
-IPUMS_aggr(76) # select files
-
-rm(list=setdiff(ls(), c("IPUMS_aggr","IPUMS_summary","sum2","sum.table","pct.table","loc_files","file.list","dsn")))
+IPUMS_aggr(44) # select files
+grep("508",file.list)
+#rm(list=setdiff(ls(), c("IPUMS_aggr","IPUMS_summary","sum2","sum.table","pct.table","loc_files","file.list","dsn")))
 # show how many NAs in each field
 #  apply(x, 2, function(x) paste0(round(sum(is.na(x))/length(x)*100,1),"%"))
 ```
@@ -800,17 +800,39 @@ fwrite(orig.table,paste0(dsn,"/IPUMS_geodata_pct_11Nov17.csv")) # original sum t
 Reading files as a ffdf allows users to work with large dataframes without storing them in memory. # Join with spatial data
 ```{r eval=FALSE}
 
+
 # Load shapefile attribute data (decadal means)
 ipums.geo <- read.csv(paste0(dsn,"/IPUMS_geodata_decadal_11Nov17.csv"),header = T)
+
+#country codes
+ctry.codes <- ipums.geo %>%
+  group_by(CNTRY_NAME,CNTRY_CODE) %>%
+  summarize(var=n()) %>%
+  filter(var>2)
+
 # Load pct table (aggregated to the GEOLVL1/2)
 ipums <- read.csv(paste0(dsn,"/IPUMS_geodata_pct_11Nov17.csv"),header = T)
+summary(ipums) 
 
-
-summary(ipums)
-table(ipums$COUNTRY,ipums$YEAR)
+# join country name
 ipums1 <- ipums %>%
-  group_by()
+  left_join(ctry.codes[1:2],by=c("COUNTRY"="CNTRY_CODE"))
 
+# availabilty table
+avail.table <- table(ipums1$CNTRY_NAME,ipums$YEAR)
+avail.table <- avail.table %>%
+  as.data.frame() %>%
+  subset(Freq>0) %>%
+  rename(Ctry=Var1,Year=Var2,Num=Freq) %>%
+  arrange(Ctry,Year)
+write.csv(avail.table,"data availability table.csv",row.names = F)
+
+# look at 1 country
+Country.check <- ipums1 %>%
+  filter(CNTRY_NAME=="Brazil")
+
+
+hist(pct.table)
 
 ```
 
