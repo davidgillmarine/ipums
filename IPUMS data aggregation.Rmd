@@ -790,24 +790,29 @@ writeOGR(all_data.shp,dsn,'IPUMS_geodata',driver = "ESRI Shapefile",overwrite_la
 # output the tabluar data as csv
 fwrite(all_data.shp@data,paste0(dsn,"/IPUMS_geodata_decadal_11Nov17.csv"))  # decadal values
 fwrite(sum.table,paste0(dsn,"/IPUMS_geodata_sums_11Nov17.csv")) # sums
-fwrite(pct.table,paste0(dsn,"/IPUMS_geodata_pct_11Nov17.csv"))
-fwrite(orig.table,paste0(dsn,"/IPUMS_geodata_pct_11Nov17.csv"))
+fwrite(pct.table,paste0(dsn,"/IPUMS_geodata_pct_11Nov17.csv"))  # percentages
+fwrite(orig.table,paste0(dsn,"/IPUMS_geodata_pct_11Nov17.csv")) # original sum table with the original GEOL
 
 ```
 
+
+## Data checking
+Reading files as a ffdf allows users to work with large dataframes without storing them in memory. # Join with spatial data
+```{r eval=FALSE}
+
+# Load shapefile attribute data (decadal means)
+ipums.geo <- read.csv(paste0(dsn,"/IPUMS_geodata_decadal_11Nov17.csv"),header = T)
+# Load pct table (aggregated to the GEOLVL1/2)
+ipums <- read.csv(paste0(dsn,"/IPUMS_geodata_pct_11Nov17.csv"),header = T)
+
+
+summary(ipums)
+table(ipums$COUNTRY,ipums$YEAR)
+ipums1 <- ipums %>%
+  group_by()
+
+
+```
 
 
 # END
-
-## Read in the data in ffdf format
-Reading files as a ffdf allows users to work with large dataframes without storing them in memory. Although they take quite a while to read into R and to convert to dataframes, they can be queried (i.e. you can select portions of the data you need) using the *filter* function.
-```{r eval=FALSE}
-#system.time(asia<- read.csv.ffdf(file="ipumsi_asia.csv", header=TRUE, VERBOSE=TRUE, 
-#                  first.rows=1000000, next.rows=1000000, colClasses=NA))
-#system.time(x <- fread('ipumsi_00028.csv',nrows=10000000))
-#headernames <- names(x)
-#pryr::object_size(asia)
-system.time(x <- fread('data/ipumsi_00049.csv/ipumsi_00049.csv', showProgress = T))
-
-```
-
